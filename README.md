@@ -8,3 +8,4 @@ TODO :
 - recherche automatique des wordlists et des règles avec locate 
 - téléchargement automatique des wordlists + règles quand elles sont manquantes
 - faire un README mieux avec des graphiques + une documentation
+- créer le masque 3_default.hcchr automatiquement
