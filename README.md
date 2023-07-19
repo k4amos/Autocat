@@ -2,7 +2,7 @@
 
 
 TODO : 
-- remplacer /home/tgirard par le bon dossier
+- enlever les suppressions de potfile
 - utiliser des arguments quand on lance le programme et pas des variables hardcodées
 - compléter la liste de wordlist et de règles pour des durées de cassage de plus d'une heure
 - recherche automatique des wordlists et des règles avec locate 
