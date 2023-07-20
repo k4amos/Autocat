@@ -50,17 +50,17 @@ do
         #echo "$mask"
 
         #echo "$nb_digits"
-        timeout --foreground 3600 hashcat -m $hashes_type -a 3 -1 ?l?d?u -2 ?l?d -3 $mask 3_default.hcchr $hashes_location --status --status-timer 1 --machine-readable -O | tee "report_lyon_optimal/$i.log"
+        timeout --foreground 3600 hashcat -m $hashes_type -a 3 -1 ?l?d?u -2 ?l?d -3 $mask 3_default.hcchr $hashes_location 
     else
         wordlist=$(echo "$i" | cut -d " " -f 1)
         rule_temp=$(echo "$i" | cut -d " " -f 2)
-        rule="${rule_temp::-4}" # changer ça
+        rule="${rule_temp::-4}" # changer ça # il faudrait enlever tous les .log de methods_list
 
         if [ -f "/dico/$wordlist"]
         then
-            timeout --foreground 3600 hashcat -m $hashes_type $hashes_location /dico/$wordlist -r /dico/rules/$rule --status --status-timer 1 --machine-readable -O | tee "report_lyon_optimal/$i $j.log"
+            timeout --foreground 3600 hashcat -m $hashes_type $hashes_location /dico/$wordlist -r /dico/rules/$rule 
         else
-            timeout --foreground 3600 hashcat -m $hashes_type $hashes_location concat_all_ntds wordlists/$wordlist -r /dico/rules/$rule --status --status-timer 1 --machine-readable -O | tee "report_lyon_optimal/$i $j.log"
+            timeout --foreground 3600 hashcat -m $hashes_type $hashes_location concat_all_ntds wordlists/$wordlist -r /dico/rules/$rule 
         fi
     fi
 done
