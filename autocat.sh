@@ -42,7 +42,6 @@ fi
 
 for i in "${methods_list[@]}"
 do
-    # rm /home/tgirard/.local/share/hashcat/hashcat.potfile
     if [[ $i == *"brute_force"* ]] 
     then
         #echo "brute force" 
@@ -65,5 +64,3 @@ do
         fi
     fi
 done
-
-# rm /home/tgirard/.local/share/hashcat/hashcat.potfile
