@@ -98,7 +98,7 @@ do
 
         if [ -f "/dico/$wordlist" ]
         then
-            timeout --foreground 3600 hashcat -m $hashes_type $hashes_location $wordlist_found -r /dico/rules/$rule
+            timeout --foreground 3600 hashcat -m $hashes_type $hashes_location /dico/$wordlist -r /dico/rules/$rule
         else
             timeout --foreground 3600 hashcat -m $hashes_type $hashes_location concat_all_ntds wordlists/$wordlist -r /dico/rules/$rule 
         fi
