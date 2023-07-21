@@ -6,6 +6,7 @@
 
 
 mask_total="?1?2?2?2?2?2?2?3?3?3?3?d?d?d?d"
+wordlists=("rockyou.txt")
 
 unset -v hashes_type
 unset -v hashes_location
@@ -46,6 +47,45 @@ fi
 ############## SCRIPT ##############
 ####################################
 
+download_wordlist() {
+  for wordlist in $wordlists
+  do
+    wordlist_location=$(locate $wordlist | head -n 1)
+    # test if the wordlist exists
+    if [[ $wordlist_location ]]
+    then
+      echo "${wordlist} found at ${wordlist_location}"
+    else
+      read -p "${wordlist} not found, do you want to download it? [y/N]" download_choice
+      # if download required
+      if [[ "$download_choice" == "y" ]]
+      then
+        read -p "Where do you want to install it? [/tmp]" download_location
+        # test if suggested location for the installation exists
+        if [[ $download_location =~ ^[a-zA-Z0-9_./-]+$ ]]
+        then
+          if [ -d "$download_location" ]
+          then
+            echo "${download_location} found!"
+          else
+            echo "${download_location} NOT found! Using /tmp..."
+            download_location="/tmp"
+          fi
+        else
+            echo "${download_location} is not a valid directory path! Using /tmp..."
+            download_location="/tmp"
+        fi
+        # download wordlist
+        case $wordlist in
+        "rockyou.txt")
+          wget -P $download_location https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt
+          ;;
+        esac
+      fi
+    fi
+  done
+}
+
 cat $methods_list | while read line
 do
     if [[ $line == *"brute_force"* ]] 
@@ -61,7 +101,7 @@ do
         wordlist=$(echo "$line" | cut -d " " -f 1)
         rule=$(echo "$line" | cut -d " " -f 2)
 
-        if [ -f "/dico/$wordlist"]
+        if [ -f "/dico/$wordlist" ]
         then
             hashcat -m $hashes_type $hashes_location /dico/$wordlist -r /dico/rules/$rule 
         else
