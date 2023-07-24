@@ -47,8 +47,52 @@ fi
 ############## SCRIPT ##############
 ####################################
 
+test_download_location() {
+  download_location=$1
+
+  if [[ $download_location =~ ^[a-zA-Z0-9_./-]+$ ]]
+  then
+    if [ -d "$download_location" ]
+    then
+      echo "${download_location} found!"
+    else
+      echo "${download_location} NOT found! Using /tmp..."
+      download_location="/tmp"
+    fi
+  else
+      echo "${download_location} is not a valid directory path! Using /tmp..."
+      download_location="/tmp"
+  fi
+}
+
 download_wordlist() {
-  for wordlist in $wordlists
+  wget -P $download_location "${wordlists["${wordlist}"]}"
+  if [[ -f "${download_location}/${wordlist}.7z" ]] && [[ $(file "${download_location}/${wordlist}.7z") == *"zip"* ]]
+  then
+    echo "Unzipping ${download_location}/${wordlist}.7z..."
+    7za e "${download_location}/${wordlist}.7z"
+  fi
+
+}
+
+ask_for_downloading() {
+  read -p "${wordlist} not found, do you want to download it? [y(es)/N(o)/a(ll no)] " download_choice
+  # if download required
+  if [[ "$download_choice" == "y" ]]
+  then
+    read -p "Where do you want to install it? [/tmp] " download_location
+    # test if suggested location for the installation exists
+    test_download_location
+    # download wordlist
+    download_wordlist
+  fi
+  # return 2 if 'a' choice
+  [[ "$download_choice" == "a" ]] && return 2
+}
+
+check_for_wordlist() {
+  source wordlists.sh
+  for wordlist in ${!wordlists[@]}
   do
     wordlist_location=$(locate $wordlist | head -n 1)
     # test if the wordlist exists
@@ -56,32 +100,9 @@ download_wordlist() {
     then
       echo "${wordlist} found at ${wordlist_location}"
     else
-      read -p "${wordlist} not found, do you want to download it? [y/N]" download_choice
-      # if download required
-      if [[ "$download_choice" == "y" ]]
-      then
-        read -p "Where do you want to install it? [/tmp]" download_location
-        # test if suggested location for the installation exists
-        if [[ $download_location =~ ^[a-zA-Z0-9_./-]+$ ]]
-        then
-          if [ -d "$download_location" ]
-          then
-            echo "${download_location} found!"
-          else
-            echo "${download_location} NOT found! Using /tmp..."
-            download_location="/tmp"
-          fi
-        else
-            echo "${download_location} is not a valid directory path! Using /tmp..."
-            download_location="/tmp"
-        fi
-        # download wordlist
-        case $wordlist in
-        "rockyou.txt")
-          wget -P $download_location https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt
-          ;;
-        esac
-      fi
+      ask_for_downloading $wordlist
+      # break the loop if no wordlist is wanted to be downloaded
+      [[ $? == 2 ]] && break
     fi
   done
 }
