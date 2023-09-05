@@ -1,0 +1,2 @@
+brute-force 6 characters
+fr-top20000 rules.small
