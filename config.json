@@ -1,5 +1,8 @@
 {
     "cracking_sequence_path": "./cracking_sequence.txt",
-    "wordlists_path": "/usr/share/wordlists/wordlists",
-    "rules_path": "/usr/share/wordlists/hashcat-rule"
+
+    "clem9669_wordlists_path": "/usr/share/wordlists/wordlists",
+    "clem9669_rules_path": "/usr/share/wordlists/hashcat-rule",
+    "Hob0Rules_path": "/usr/share/wordlists/Hob0Rules",
+    "OneRuleToRuleThemAll_rules_path": "/usr/share/wordlists/password_cracking_rules"
 }
