@@ -1,7 +1,9 @@
 # Autocat - Hashcat Wrapper with optimal cracking method
 
-![](https://github.com/thomas-girard/Autocat/img/logo.png)
 
+<p align="center">
+    <img src="img/logo.png" style="height:350px">
+</p>
 
 ## How it works
 
