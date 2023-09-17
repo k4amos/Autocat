@@ -23,3 +23,6 @@ Use exactly the same syntax as Hashcat; the choice of cracking methods (option -
 ```bash
 ./autocat.sh -m 1000 hash_file_name
 ```
+
+
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://vshymanskyy.github.io/StandWithUkraine/)
