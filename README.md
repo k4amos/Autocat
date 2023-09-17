@@ -1,11 +1,21 @@
-# Autocat
+# Autocat - Hashcat Wrapper with optimal cracking method
+
+![](https://github.com/thomas-girard/Autocat/img.logo.png)
 
 
-TODO : 
-- enlever les suppressions de potfile
-- utiliser des arguments quand on lance le programme et pas des variables hardcodées
-- compléter la liste de wordlist et de règles pour des durées de cassage de plus d'une heure
-- recherche automatique des wordlists et des règles avec locate 
-- téléchargement automatique des wordlists + règles quand elles sont manquantes
-- faire un README mieux avec des graphiques + une documentation
-- créer le masque 3_default.hcchr automatiquement
+## How it works
+
+
+## Quick Start
+
+```bash
+git clone git@github.com:thomas-girard/Autocat.git
+cd Autocat
+chmod +x autocat.sh
+```
+
+Use exactly the same syntax as Hashcat; the choice of cracking methods (option -a) will be done automatically.
+
+```bash
+./autocat.sh -m 1000 hash_file_name
+```

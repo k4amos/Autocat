@@ -1,0 +1,5 @@
+{
+    "cracking_sequence_path": "./cracking_sequence.txt",
+    "wordlists_path": "/usr/share/wordlists/wordlists",
+    "rules_path": "/usr/share/wordlists/hashcat-rule"
+}
