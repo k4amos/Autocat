@@ -7,6 +7,8 @@
 
 ## How it works
 
+The optimal password cracking method sequence was obtained using the following code : [autocat-training](https://github.com/thomas-girard/Autocat-training)
+
 
 ## Quick Start
 
