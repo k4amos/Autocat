@@ -1,6 +1,6 @@
 # Autocat - Hashcat Wrapper with optimal cracking method
 
-![](https://github.com/thomas-girard/Autocat/img.logo.png)
+![](https://github.com/thomas-girard/Autocat/img/logo.png)
 
 
 ## How it works
