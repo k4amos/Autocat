@@ -19,13 +19,14 @@ emoji_check="\u2714"
 emoji_cat="\U1F431"
 emoji_cross="\u274C"
 
-printf "${LIGHT_CYAN}Welcome to Autocat ${RESET} $emoji_cat\n"
+printf "${LIGHT_CYAN}Welcome to Autocat${RESET} $emoji_cat\n"
 
 mask_total="?1?2?2?2?2?2?2?3?3?3?3?d?d?d?d"
 
 config_file="config.json"
 
 cracking_sequence_path=$(jq -r '.cracking_sequence_path' "$config_file")
+timeout=$(jq -r '.timeout' "$config_file")
 
 clem9669_wordlists_path=$(jq -r '.clem9669_wordlists_path' "$config_file")
 clem9669_rules_path=$(jq -r '.clem9669_rules_path' "$config_file")
@@ -56,6 +57,7 @@ find_path() {
 
 run_hashcat() {
   regex="/[[:alnum:]_/.-]+" # test if a path is in argument or not
+
   if [[ "$script_args" =~ $regex ]]; then
 
     readarray -t lines < $cracking_sequence
@@ -68,7 +70,7 @@ run_hashcat() {
         mask="${mask_total:0:($nb_digits)*2}"
         
         printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 ${RESET}\n"
-        timeout --foreground 3600 hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 
+        timeout --foreground $timeout hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 
       
       elif [[ $line == *"potfile"* ]]; then
 
@@ -79,7 +81,7 @@ run_hashcat() {
         rule=$(echo "$line" | cut -d " " -f 2)
 
         printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args /tmp/potfile -r $rule_path -O -w 3${RESET}\n"
-        timeout --foreground 3600 hashcat $script_args /tmp/potfile -r $rule_path -O -w 3
+        timeout --foreground $timeout hashcat $script_args /tmp/potfile -r $rule_path -O -w 3
         rm /tmp/potfile
       
       else
@@ -90,7 +92,7 @@ run_hashcat() {
         rule_path=$(find_path $rule)
 
         printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3${RESET}\n"
-        timeout --foreground 3600 hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3 
+        timeout --foreground $timeout hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3 
       
       fi
     done
