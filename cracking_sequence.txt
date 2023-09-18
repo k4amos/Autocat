@@ -1,4 +1,3 @@
-potfile OneRuleToRuleThemAll.rule
 fr-top20000 d3adhob0.rule
 fr-top1000000 OneRuleToRuleThemAll.rule
 fr-top1000000 d3adhob0.rule
@@ -9,6 +8,7 @@ various_leak5 InsidePro-HashManager.rule
 various_leak3 InsidePro-HashManager.rule
 various_leak2 InsidePro-HashManager.rule
 wifi-ssid d3adhob0.rule
+potfile OneRuleToRuleThemAll.rule
 entreprise_fr OneRuleToRuleThemAll.rule
 various_leak7 InsidePro-HashManager.rule
 noms_famille_fr clem9669_medium.rule
