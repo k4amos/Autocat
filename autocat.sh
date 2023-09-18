@@ -7,10 +7,21 @@
 ############## VARIABLES DEFINITION ##############
 ##################################################
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+RESET='\033[0m'
+LIGHT_MAGENTA="\033[1;95m"
+LIGHT_CYAN="\033[1;96m"
+
+
+emoji_check="\u2714"
+emoji_cat="\U1F431"
+emoji_cross="\u274C"
+
+printf "${LIGHT_CYAN}Welcome to Autocat ${RESET} $emoji_cat\n"
 
 mask_total="?1?2?2?2?2?2?2?3?3?3?3?d?d?d?d"
-
-wordlists=("rockyou.txt")
 
 config_file="config.json"
 
@@ -25,52 +36,60 @@ cracking_sequence="cracking_sequence.txt"
 
 script_args="$@"
 
-run_hashcat() {
 
-  echo $script_args
+find_path() {
+  local rule="$1"  # Premier argument
+  
+  if [ -f "$clem9669_rules_path/$rule" ]; then
+    echo "$clem9669_rules_path/$rule"
+  elif [ -f "$Hob0Rules_path/$rule" ]; then
+    echo "$Hob0Rules_path/$rule"
+  elif [ -f "$OneRuleToRuleThemAll_rules_path/$rule" ]; then
+    echo "$OneRuleToRuleThemAll_rules_path/$rule"
+  elif [ -f "/usr/share/hashcat/rules/$rule" ]; then
+    echo "/usr/share/hashcat/rules/$rule"
+  else 
+    printf "${RED}$rule still missing :(...${RESET}\n"
+    exit 1
+  fi
+}
+
+run_hashcat() {
   regex="/[[:alnum:]_/.-]+" # test if a path is in argument or not
   if [[ "$script_args" =~ $regex ]]; then
-
-    # cat $cracking_sequence | while read line || [ -n "$line" ]; do 
-    #   echo $line
-    # done
-
 
     readarray -t lines < $cracking_sequence
 
     for line in "${lines[@]}"; do
 
-    #cat $cracking_sequence | while read line || [ -n "$line" ]; do 
-
-      echo "$line llllll"
       if [[ $line == *"brute-force"* ]]; then
         nb_digits=$(echo "$line" | grep -oE '(0|1?[0-9]|20)')
-        echo "$mask_total $nb_digits"
-        echo "${mask_total:0:($nb_digits)*2}"
+        
         mask="${mask_total:0:($nb_digits)*2}"
         
+        printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 ${RESET}\n"
+        timeout --foreground 3600 hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 
+      
+      elif [[ $line == *"potfile"* ]]; then
 
-        #timeout --foreground 3600 hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 3_default.hcchr $mask -O -w 3 
+        rule=$(echo "$line" | cut -d " " -f 2)
+        rule_path=$(find_path $rule)
+        
+        cat ~/.local/share/hashcat/hashcat.potfile | rev | cut -d':' -f1 | rev > /tmp/potfile
+        rule=$(echo "$line" | cut -d " " -f 2)
+
+        printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args /tmp/potfile -r $rule_path -O -w 3${RESET}\n"
+        timeout --foreground 3600 hashcat $script_args /tmp/potfile -r $rule_path -O -w 3
+        rm /tmp/potfile
+      
       else
 
         wordlist=$(echo "$line" | cut -d " " -f 1)
         rule=$(echo "$line" | cut -d " " -f 2)
 
-        if [ -f "$clem9669_rules_path/$rule" ]; then
-          rule_path=$clem9669_rules_path/$rule
-        elif [ -f "$Hob0Rules_path/$rule" ]; then
-          rule_path=$Hob0Rules_path/$rule
-        elif [ -f "$OneRuleToRuleThemAll_rules_path/$rule" ]; then
-          rule_path=$OneRuleToRuleThemAll_rules_path/$rule
-        elif [ -f "/usr/share/hashcat/rules/$rule" ]; then
-          rule_path="/usr/share/hashcat/rules/$rule"
-        else 
-          echo "$rule still missing :(..."
-          exit 1
-        fi
-        echo $line
-        #hashcat -h
-        #timeout --foreground 3 hashcat -m 1000 ../ntds_test /usr/share/wordlists/wordlists/actors -0
+        rule_path=$(find_path $rule)
+
+        printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3${RESET}\n"
         timeout --foreground 3600 hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3 
       
       fi
@@ -84,53 +103,49 @@ run_hashcat() {
 download() {
   
   if [ ! -d "$clem9669_wordlists_path" ]; then
-    echo "Downloading wordlists from Clem9669..."
+    printf "${YELLOW}Downloading wordlists from Clem9669...${RESET}\n"
     sudo git clone https://github.com/clem9669/wordlists.git $clem9669_wordlists_path
-
+    printf "${GREEN}$emoji_check Download wordlists from Clem9669${RESET}\n"
     for file in $clem9669_wordlists_path/*.7z; do
-      echo "sudo 7z x "$clem9669_wordlists_path/$file" 2>/dev/null #-o $wordlist_location/wordlists"
-      sudo 7z x "$file" 2>/dev/null #-o $wordlist_location/wordlists
+      sudo 7z x "$file" -o$clem9669_wordlists_path
     done
-
   fi
   
   
   if [ ! -d "$clem9669_rules_path" ]; then
-    echo "Downloading rules from Clem9669..."
+    printf "${YELLOW}Downloading rules from Clem9669...${RESET}\n"
     sudo git clone https://github.com/clem9669/hashcat-rule.git $clem9669_rules_path
+    printf "${GREEN}$emoji_check Download rules from Clem9669${RESET}\n"
   fi
 
   if [ ! -d "$Hob0Rules_path" ]; then
-    echo "Downloading Hob0Rules..."
+    printf "${YELLOW}Downloading Hob0Rules rules...${RESET}\n"
     sudo git clone https://github.com/praetorian-inc/Hob0Rules.git $Hob0Rules_path
+    printf "${GREEN}$emoji_check Download Hob0Rules rules${RESET}\n"
   fi
 
   if [ ! -d "$OneRuleToRuleThemAll_rules_path" ]; then
-    echo "Downloading OneRuleToRuleThemAll..."
+    printf "${YELLOW}Downloading OneRuleToRuleThemAll rules...${RESET}\n"
     sudo git clone https://github.com/NotSoSecure/password_cracking_rules.git $OneRuleToRuleThemAll_rules_path
+    printf "${GREEN}$emoji_check Download OneRuleToRuleThemAll rules${RESET}\n"
   fi
 
 
 }
 
-ask_for_downloading() {
 
-    echo "Do you want to download the required wordlists+rules manually or automatically"
+ask_for_downloading() {
+    printf "${LIGHT_MAGENTA}Do you want to download the required wordlists+rules manually or automatically?${RESET}\n"
     echo ""
     options=("Automatically (recommended)" "Manually = Quit")
 
     select choice in "${options[@]}"; do
         case $REPLY in
             1)
-                echo "automatic download..."
-
                 if [ ! -e "$(dirname "$clem9669_wordlists_path")" ]; then
                   mkdir $(dirname "$clem9669_wordlists_path") 
                   chmod 777 $(dirname "$clem9669_wordlists_path") 
                 fi
-                # if [ ! -e "$clem9669_wordlists_path" ]; then
-                #   mkdir "$clem9669_wordlists_path" 
-                # fi
                 download
                 run_hashcat
                 ;;
@@ -138,8 +153,8 @@ ask_for_downloading() {
                 echo "bye :)"
                 exit 1
                 ;;
-            *)
-                echo "Invalid choice, please select 1 or 2."
+            *)  
+                printf "${RED}Invalid choice, please select 1 or 2.${RESET}\n"
                 ;;
         esac
     done
@@ -148,23 +163,23 @@ ask_for_downloading() {
 check_for_wordlist() {
 
   if [ ! -d "$clem9669_wordlists_path" ]; then
-    echo "Clem9669 wordlists not present..."
+    printf "${RED}$emoji_cross Clem9669 wordlists not present${RESET}\n"
     ask_for_downloading
 
   fi
 
   if [ ! -d "$clem9669_rules_path" ]; then
-    echo "Clem9669 rules not present..."
+    printf "${RED}$emoji_cross Clem9669 rules not present${RESET}\n"
     ask_for_downloading
   fi
 
   if [ ! -d "$Hob0Rules_path" ]; then
-    echo "Hob0Rules rules not present..."
+    printf "${RED}$emoji_cross Hob0Rules rules not present${RESET}\n"
     ask_for_downloading
   fi
 
   if [ ! -d "$OneRuleToRuleThemAll_rules_path" ]; then
-    echo "OneRuleToRuleThemAll rules not present..."
+    printf "${RED}$emoji_cross OneRuleToRuleThemAll rules not present${RESET}\n"
     ask_for_downloading
   fi
 
@@ -174,21 +189,19 @@ check_for_wordlist() {
 
     for line in "${lines[@]}"; do
 
-      if [[ ! $line = *"brute-force"* ]]; then
+      if [[ $line != *"brute-force"* && $line != *"potfile"* ]]; then
 
         wordlist=$(echo "$line" | cut -d " " -f 1)
         rule=$(echo "$line" | cut -d " " -f 2)
 
         if [ ! -f "$clem9669_wordlists_path/$wordlist" ] || ([ ! -f "$clem9669_rules_path/$rule" ] && [ ! -f "/usr/share/hashcat/rules/$rule" ] && [ ! -f "$Hob0Rules_path/$rule" ] && [ ! -f "$OneRuleToRuleThemAll_rules_path/$rule" ]); then
-          echo "$line not found"
+          printf "${RED}$emoji_cross $line not found${RESET}\n"
           boolean_ask_for_downloading=true
-          echo "$boolean_ask_for_downloading"
           break
         fi
       fi
     done
 
-    echo "$boolean_ask_for_downloading"
     if $boolean_ask_for_downloading; then
       ask_for_downloading
     fi

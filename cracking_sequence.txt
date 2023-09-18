@@ -1,3 +1,4 @@
+potfile OneRuleToRuleThemAll.rule
 fr-top20000 d3adhob0.rule
 fr-top1000000 OneRuleToRuleThemAll.rule
 fr-top1000000 d3adhob0.rule

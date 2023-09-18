@@ -2,7 +2,7 @@
 
 
 <p align="center">
-    <img src="img/logo.png" style="height:350px">
+    <img src="tool/img/logo.png" style="height:350px">
 </p>
 
 ## How it works
