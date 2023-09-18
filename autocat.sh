@@ -60,6 +60,9 @@ run_hashcat() {
 
   if [[ "$script_args" =~ $regex ]]; then
 
+
+    potfile_number=1;
+
     readarray -t lines < $cracking_sequence
 
     for line in "${lines[@]}"; do
@@ -70,7 +73,7 @@ run_hashcat() {
         mask="${mask_total:0:($nb_digits)*2}"
         
         printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 ${RESET}\n"
-        timeout --foreground $timeout hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 
+        timeout --foreground $timeout hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/brute-force $nb_digits"
       
       elif [[ $line == *"potfile"* ]]; then
 
@@ -81,7 +84,8 @@ run_hashcat() {
         rule=$(echo "$line" | cut -d " " -f 2)
 
         printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args /tmp/potfile -r $rule_path -O -w 3${RESET}\n"
-        timeout --foreground $timeout hashcat $script_args /tmp/potfile -r $rule_path -O -w 3
+        timeout --foreground $timeout hashcat $script_args /tmp/potfile -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/potfile$potfile_number $rule"
+        $potfile_number=$potfile_number+1
         rm /tmp/potfile
       
       else
@@ -92,7 +96,7 @@ run_hashcat() {
         rule_path=$(find_path $rule)
 
         printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3${RESET}\n"
-        timeout --foreground $timeout hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3 
+        timeout --foreground $timeout hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/$wordlist $rule"
       
       fi
     done
@@ -131,8 +135,6 @@ download() {
     sudo git clone https://github.com/NotSoSecure/password_cracking_rules.git $OneRuleToRuleThemAll_rules_path
     printf "${GREEN}$emoji_check Download OneRuleToRuleThemAll rules${RESET}\n"
   fi
-
-
 }
 
 
