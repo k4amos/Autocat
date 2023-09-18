@@ -85,7 +85,7 @@ run_hashcat() {
 
         printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args /tmp/potfile -r $rule_path -O -w 3${RESET}\n"
         timeout --foreground $timeout hashcat $script_args /tmp/potfile -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/potfile$potfile_number $rule"
-        $potfile_number=$potfile_number+1
+        potfile_number=$((potfile_number+1))
         rm /tmp/potfile
       
       else
