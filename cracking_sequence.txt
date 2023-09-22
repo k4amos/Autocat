@@ -3,17 +3,18 @@ fr-top1000000 OneRuleToRuleThemAll.rule
 fr-top1000000 d3adhob0.rule
 pseudo InsidePro-HashManager.rule
 various_leak1 InsidePro-HashManager.rule
+potfile OneRuleToRuleThemAll.rule
 various_leak4 InsidePro-HashManager.rule
 various_leak5 InsidePro-HashManager.rule
 various_leak3 InsidePro-HashManager.rule
 various_leak2 InsidePro-HashManager.rule
 wifi-ssid d3adhob0.rule
-potfile OneRuleToRuleThemAll.rule
 entreprise_fr OneRuleToRuleThemAll.rule
 various_leak7 InsidePro-HashManager.rule
 noms_famille_fr clem9669_medium.rule
 various_leak3 d3adhob0.rule
 wikipedia_fr InsidePro-HashManager.rule
+potfile OneRuleToRuleThemAll.rule
 pseudo d3adhob0.rule
 fr-top1000000 dive.rule
 various_leak4 OneRuleToRuleThemAll.rule
@@ -34,6 +35,7 @@ domain_tld_FR InsidePro-HashManager.rule
 lastfm clem9669_medium.rule
 various_leak8 dive.rule
 villes_fr clem9669_medium.rule
+potfile OneRuleToRuleThemAll.rule
 top_prenoms_combo d3adhob0.rule
 wifi-ssid clem9669_large.rule
 various_leak3 OneRuleToRuleThemAll.rule
@@ -74,6 +76,7 @@ various_leak4 rockyou-30000.rule
 domain_tld_FR OneRuleToRuleThemAll.rule
 various_leak4 clem9669_medium.rule
 lastfm clem9669_large.rule
+potfile OneRuleToRuleThemAll.rule
 wikipedia_fr dive.rule
 various_leak6 dive.rule
 expression clem9669_large.rule
@@ -168,3 +171,4 @@ domain_tld_FR clem9669_medium.rule
 brute-force 10 characters
 potfile OneRuleToRuleThemAll.rule
 brute-force 11 characters
+potfile OneRuleToRuleThemAll.rule

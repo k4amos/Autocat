@@ -26,7 +26,6 @@ mask_total="?1?2?2?2?2?2?2?3?3?3?3?d?d?d?d"
 config_file="config.json"
 
 cracking_sequence_path=$(jq -r '.cracking_sequence_path' "$config_file")
-timeout=$(jq -r '.timeout' "$config_file")
 
 clem9669_wordlists_path=$(jq -r '.clem9669_wordlists_path' "$config_file")
 clem9669_rules_path=$(jq -r '.clem9669_rules_path' "$config_file")
@@ -72,8 +71,8 @@ run_hashcat() {
         
         mask="${mask_total:0:($nb_digits)*2}"
         
-        printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 ${RESET}\n"
-        timeout --foreground $timeout hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/brute-force $nb_digits"
+        printf "${LIGHT_MAGENTA}hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 ${RESET}\n"
+        hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/brute-force $nb_digits"
       
       elif [[ $line == *"potfile"* ]]; then
 
@@ -83,8 +82,8 @@ run_hashcat() {
         cat ~/.local/share/hashcat/hashcat.potfile | rev | cut -d':' -f1 | rev > /tmp/potfile
         rule=$(echo "$line" | cut -d " " -f 2)
 
-        printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args /tmp/potfile -r $rule_path -O -w 3${RESET}\n"
-        timeout --foreground $timeout hashcat $script_args /tmp/potfile -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/potfile$potfile_number $rule"
+        printf "${LIGHT_MAGENTA}hashcat $script_args /tmp/potfile -r $rule_path -O -w 3${RESET}\n"
+        hashcat $script_args /tmp/potfile -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/potfile$potfile_number $rule"
         potfile_number=$((potfile_number+1))
         rm /tmp/potfile
       
@@ -95,8 +94,8 @@ run_hashcat() {
 
         rule_path=$(find_path $rule)
 
-        printf "${LIGHT_MAGENTA}timeout --foreground 3600 hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3${RESET}\n"
-        timeout --foreground $timeout hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/$wordlist $rule"
+        printf "${LIGHT_MAGENTA}hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3${RESET}\n"
+        hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/$wordlist $rule"
       
       fi
     done
