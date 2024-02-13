@@ -1,8 +1,4 @@
 #!/bin/bash
-
-#set -e
-
-
 ##################################################
 ############## VARIABLES DEFINITION ##############
 ##################################################
@@ -55,10 +51,6 @@ find_path() {
 }
 
 run_hashcat() {
-  regex="/[[:alnum:]_/.-]+" # test if a path is in argument or not
-
-  if [[ "$script_args" =~ $regex ]]; then
-
 
     potfile_number=1;
 
@@ -99,10 +91,6 @@ run_hashcat() {
       
       fi
     done
-
-  else
-    hashcat  $script_args
-  fi
 }
 
 download() {
