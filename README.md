@@ -1,4 +1,4 @@
-# Autocat - Hashcat Wrapper with optimal cracking method
+# Autocat - Hashcat Wrapper with more optimal cracking method
 
 
 <p align="center">
