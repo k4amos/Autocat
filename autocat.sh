@@ -71,13 +71,13 @@ run_hashcat() {
         rule=$(echo "$line" | cut -d " " -f 2)
         rule_path=$(find_path $rule)
         
-        cat ~/.local/share/hashcat/hashcat.potfile | rev | cut -d':' -f1 | rev > /tmp/potfile
+        cat ~/.local/share/hashcat/hashcat.potfile | rev | cut -d':' -f1 | rev > ~/autocat_potfile
         rule=$(echo "$line" | cut -d " " -f 2)
 
-        printf "${LIGHT_MAGENTA}hashcat $script_args /tmp/potfile -r $rule_path -O -w 3${RESET}\n"
-        hashcat $script_args /tmp/potfile -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/potfile$potfile_number $rule"
+        printf "${LIGHT_MAGENTA}hashcat $script_args ~/autocat_potfile -r $rule_path -O -w 3${RESET}\n"
+        hashcat $script_args ~/autocat_potfile -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/potfile$potfile_number $rule"
         potfile_number=$((potfile_number+1))
-        rm /tmp/potfile
+        rm ~/autocat_potfile
       
       else
 
