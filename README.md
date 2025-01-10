@@ -7,7 +7,7 @@
 
 ## How it works
 
-The password cracking method sequence was obtained using the following code : [autocat-training](https://github.com/thomas-girard/Autocat-training)
+The password cracking method sequence was obtained using the following code : [autocat-training](https://github.com/k4amos/Autocat-training)
 
 
 ## Quick Start
