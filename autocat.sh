@@ -1,208 +1,469 @@
 #!/bin/bash
+
+# Autocat - Automated hashcat workflow manager
+# This script automates the process of running hashcat with wordlists and rules
+
+set -euo pipefail
+
 ##################################################
-############## VARIABLES DEFINITION ##############
+############## GLOBAL SETTINGS ###################
 ##################################################
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-RESET='\033[0m'
-LIGHT_MAGENTA="\033[1;95m"
-LIGHT_CYAN="\033[1;96m"
+# Debug mode (set to true for verbose output)
+DEBUG_MODE=false
+
+##################################################
+############## COLOR DEFINITIONS #################
+##################################################
+
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;93m'
+readonly RESET='\033[0m'
+readonly LIGHT_MAGENTA="\033[1;95m"
+readonly LIGHT_CYAN="\033[1;96m"
+
+##################################################
+############## EMOJI DEFINITIONS #################
+##################################################
+
+readonly EMOJI_CHECK="\u2714"
+readonly EMOJI_CAT="\U1F431"
+readonly EMOJI_CROSS="\u274C"
+
+##################################################
+############## CONFIGURATION #####################
+##################################################
+
+readonly CONFIG_FILE="config.json"
+readonly HASHCAT_MASK="?1?2?2?2?2?2?2?3?3?3?3?d?d?d?d"
 
 
-emoji_check="\u2714"
-emoji_cat="\U1F431"
-emoji_cross="\u274C"
+# Parse configuration
+readonly CRACKING_SEQUENCE_PATH=$(jq -r '.paths.cracking_sequence' "$CONFIG_FILE")
+readonly HASHCAT_POTFILE_PATH=$(jq -r '.paths.hashcat_potfile' "$CONFIG_FILE" | envsubst)
 
-printf "${LIGHT_CYAN}Welcome to Autocat${RESET} $emoji_cat\n"
+readonly AUTOCAT_PROCESSED_POTFILE_PATH=$(jq -r '.paths.autocat_processed_potfile' "$CONFIG_FILE")
+readonly AUTOCAT_NEW_CRACKED_POTFILE_PATH=$(jq -r '.paths.autocat_new_cracked_potfile' "$CONFIG_FILE")
+readonly AUTOCAT_ALL_POTFILE_PATH=$(jq -r '.paths.autocat_all_potfile' "$CONFIG_FILE")
 
-mask_total="?1?2?2?2?2?2?2?3?3?3?3?d?d?d?d"
-
-config_file="config.json"
-
-cracking_sequence_path=$(jq -r '.cracking_sequence_path' "$config_file")
-
-clem9669_wordlists_path=$(jq -r '.clem9669_wordlists_path' "$config_file")
-clem9669_rules_path=$(jq -r '.clem9669_rules_path' "$config_file")
-Hob0Rules_path=$(jq -r '.Hob0Rules_path' "$config_file")
-OneRuleToRuleThemAll_rules_path=$(jq -r '.OneRuleToRuleThemAll_rules_path' "$config_file") #OneRuleToRuleThemAll
-
-cracking_sequence="cracking_sequence.txt"
-
-script_args="$@"
+readonly POTFILE_CRACKING_RULE=$(jq -r '.potfile_cracking_rule' "$CONFIG_FILE")
 
 
-find_path() {
-  local rule="$1"  # Premier argument
-  
-  if [ -f "$clem9669_rules_path/$rule" ]; then
-    echo "$clem9669_rules_path/$rule"
-  elif [ -f "$Hob0Rules_path/$rule" ]; then
-    echo "$Hob0Rules_path/$rule"
-  elif [ -f "$OneRuleToRuleThemAll_rules_path/$rule" ]; then
-    echo "$OneRuleToRuleThemAll_rules_path/$rule"
-  elif [ -f "/usr/share/hashcat/rules/$rule" ]; then
-    echo "/usr/share/hashcat/rules/$rule"
-  else 
-    printf "${RED}$rule still missing :(...${RESET}\n"
-    exit 1
+# Create associative arrays for resources
+declare -A RESOURCE_PATHS
+declare -A RESOURCE_URLS
+declare -A RESOURCE_TYPES
+declare -A RESOURCE_POST_DOWNLOAD
+
+# Parse resources from config.json
+while IFS= read -r resource; do
+  name=$(echo "$resource" | jq -r '.name')
+  RESOURCE_PATHS["$name"]=$(echo "$resource" | jq -r '.path')
+  RESOURCE_URLS["$name"]=$(echo "$resource" | jq -r '.url')
+  RESOURCE_TYPES["$name"]=$(echo "$resource" | jq -r '.type')
+  RESOURCE_POST_DOWNLOAD["$name"]=$(echo "$resource" | jq -c '.post_download // {}')
+done < <(jq -c '.download_resources[]' "$CONFIG_FILE")
+
+# Get additional rule paths
+ADDITIONAL_RULES_PATH=($(jq -r '.additional_rules_path[]' "$CONFIG_FILE" 2>/dev/null))
+
+# Get additional wordlist paths
+ADDITIONAL_WORDLISTS_PATH=($(jq -r '.additional_wordlists_path[]' "$CONFIG_FILE" 2>/dev/null))
+
+# Script arguments passed to hashcat
+readonly SCRIPT_ARGS=("$@")
+
+##################################################
+############## HELPER FUNCTIONS ##################
+##################################################
+
+# Print debug messages if debug mode is enabled
+debug_print() {
+  if [ "$DEBUG_MODE" = true ]; then
+    printf "${YELLOW}[DEBUG] $1${RESET}\n" >&2
   fi
 }
 
-run_hashcat() {
+# Validate JSON file
+validate_json() {
+  local file="$1"
+  if ! jq empty "$file" 2>/dev/null; then
+    printf "${RED}Error: Invalid JSON in $file${RESET}\n" >&2
+    return 1
+  fi
+  return 0
+}
 
-    potfile_number=1;
+##################################################
+############## WELCOME MESSAGE ###################
+##################################################
 
-    readarray -t lines < $cracking_sequence
+printf "${LIGHT_CYAN}Welcome to Autocat${RESET} $EMOJI_CAT\n\n"
 
-    for line in "${lines[@]}"; do
+##################################################
+############## UTILITY FUNCTIONS #################
+##################################################
 
-      if [[ $line == *"brute-force"* ]]; then
-        nb_digits=$(echo "$line" | grep -oE '(0|1?[0-9]|20)')
-        
-        mask="${mask_total:0:($nb_digits)*2}"
-        
-        printf "${LIGHT_MAGENTA}hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 ${RESET}\n"
-        hashcat $script_args -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/brute-force $nb_digits"
-      
-      elif [[ $line == *"potfile"* ]]; then
+# Find rule file in various locations
+# Arguments:
+#   $1 - rule filename to search for
+# Returns:
+#   0 on success (prints path to stdout)
+#   1 on failure
+find_rule_path() {
+  local rule="$1"
 
-        rule=$(echo "$line" | cut -d " " -f 2)
-        rule_path=$(find_path $rule)
-        
-        cat ~/.local/share/hashcat/hashcat.potfile | rev | cut -d':' -f1 | rev > ~/autocat_potfile
-        rule=$(echo "$line" | cut -d " " -f 2)
+  debug_print "Searching for rule: $rule"
 
-        printf "${LIGHT_MAGENTA}hashcat $script_args ~/autocat_potfile -r $rule_path -O -w 3${RESET}\n"
-        hashcat $script_args ~/autocat_potfile -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/potfile$potfile_number $rule"
-        potfile_number=$((potfile_number+1))
-        rm ~/autocat_potfile
-      
-      else
-
-        wordlist=$(echo "$line" | cut -d " " -f 1)
-        rule=$(echo "$line" | cut -d " " -f 2)
-
-        rule_path=$(find_path $rule)
-
-        printf "${LIGHT_MAGENTA}hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3${RESET}\n"
-        hashcat $script_args $clem9669_wordlists_path/$wordlist -r $rule_path -O -w 3 #--status --status-timer 1 --machine-readable | tee "report_autocat/$wordlist $rule"
-      
+  # Check rule resources first
+  for name in "${!RESOURCE_PATHS[@]}"; do
+    if [ "${RESOURCE_TYPES[$name]}" = "rules" ]; then
+      local path="${RESOURCE_PATHS[$name]}/$rule"
+      if [ -f "$path" ]; then
+        debug_print "Found rule at: $path"
+        echo "$path"
+        return 0
       fi
-    done
+    fi
+  done
+
+  # Check additional rule paths
+  for path in "${ADDITIONAL_RULES_PATH[@]}"; do
+    if [ -f "$path/$rule" ]; then
+      debug_print "Found rule at: $path/$rule"
+      echo "$path/$rule"
+      return 0
+    fi
+  done
+
+  printf "${RED}Rule $rule not found${RESET}\n" >&2
+  return 1
 }
 
-download() {
-  
-  if [ ! -d "$clem9669_wordlists_path" ]; then
-    printf "${YELLOW}Downloading wordlists from Clem9669...${RESET}\n"
-    sudo git clone https://github.com/clem9669/wordlists.git $clem9669_wordlists_path
-    printf "${GREEN}$emoji_check Download wordlists from Clem9669${RESET}\n"
-    for file in $clem9669_wordlists_path/*.7z; do
-      sudo 7z x "$file" -o$clem9669_wordlists_path
-    done
-  fi
-  
-  
-  if [ ! -d "$clem9669_rules_path" ]; then
-    printf "${YELLOW}Downloading rules from Clem9669...${RESET}\n"
-    sudo git clone https://github.com/clem9669/hashcat-rule.git $clem9669_rules_path
-    printf "${GREEN}$emoji_check Download rules from Clem9669${RESET}\n"
-  fi
+# Find wordlist file in various locations
+# Arguments:
+#   $1 - wordlist filename to search for
+# Returns:
+#   0 on success (prints path to stdout)
+#   1 on failure
+find_wordlist_path() {
+  local wordlist="$1"
 
-  if [ ! -d "$Hob0Rules_path" ]; then
-    printf "${YELLOW}Downloading Hob0Rules rules...${RESET}\n"
-    sudo git clone https://github.com/praetorian-inc/Hob0Rules.git $Hob0Rules_path
-    printf "${GREEN}$emoji_check Download Hob0Rules rules${RESET}\n"
-  fi
+  debug_print "Searching for wordlist: $wordlist"
 
-  if [ ! -d "$OneRuleToRuleThemAll_rules_path" ]; then
-    printf "${YELLOW}Downloading OneRuleToRuleThemAll rules...${RESET}\n"
-    sudo git clone https://github.com/NotSoSecure/password_cracking_rules.git $OneRuleToRuleThemAll_rules_path
-    printf "${GREEN}$emoji_check Download OneRuleToRuleThemAll rules${RESET}\n"
-  fi
+  # Check wordlist resources first
+  for name in "${!RESOURCE_PATHS[@]}"; do
+    if [ "${RESOURCE_TYPES[$name]}" = "wordlists" ]; then
+      local path="${RESOURCE_PATHS[$name]}/$wordlist"
+      if [ -f "$path" ]; then
+        debug_print "Found wordlist at: $path"
+        echo "$path"
+        return 0
+      fi
+    fi
+  done
+
+  # Check additional wordlist paths
+  for path in "${ADDITIONAL_WORDLISTS_PATH[@]}"; do
+    if [ -f "$path/$wordlist" ]; then
+      debug_print "Found wordlist at: $path/$wordlist"
+      echo "$path/$wordlist"
+      return 0
+    fi
+  done
+
+  printf "${RED}Wordlist $wordlist not found${RESET}\n" >&2
+  return 1
 }
 
+# Download required resources from configured URLs
+# No arguments
+# Returns:
+#   0 on success
+#   1 on failure
+download_resources() {
+  debug_print "Starting resource download"
 
-ask_for_downloading() {
-    printf "${LIGHT_MAGENTA}Do you want to download the required wordlists+rules manually or automatically?${RESET}\n"
-    echo ""
-    options=("Automatically (recommended)" "Manually = Quit")
+  for name in "${!RESOURCE_PATHS[@]}"; do
+    local path="${RESOURCE_PATHS[$name]}"
+    local url="${RESOURCE_URLS[$name]}"
+    local parent_dir=$(dirname "$path")
 
-    select choice in "${options[@]}"; do
-        case $REPLY in
-            1)
-                if [ ! -e "$(dirname "$clem9669_wordlists_path")" ]; then
-                  mkdir $(dirname "$clem9669_wordlists_path") 
-                  chmod 777 $(dirname "$clem9669_wordlists_path") 
-                fi
-                download
-                run_hashcat
-                ;;
-            2)
-                echo "bye :)"
-                exit 1
-                ;;
-            *)  
-                printf "${RED}Invalid choice, please select 1 or 2.${RESET}\n"
-                ;;
-        esac
-    done
-}
+    # Create parent directory if needed
+    if [ ! -e "$parent_dir" ]; then
+      sudo mkdir -p "$parent_dir"
+      sudo chmod 755 "$parent_dir"
+    fi
 
-check_for_wordlist() {
+    # Download resource if not present
+    if [ ! -d "$path" ]; then
+      printf "${YELLOW}Downloading $name...${RESET}\n"
+      sudo git clone "$url" "$path"
+      printf "${GREEN}$EMOJI_CHECK $name downloaded${RESET}\n"
 
-  if [ ! -d "$clem9669_wordlists_path" ]; then
-    printf "${RED}$emoji_cross Clem9669 wordlists not present${RESET}\n"
-    ask_for_downloading
-
-  fi
-
-  if [ ! -d "$clem9669_rules_path" ]; then
-    printf "${RED}$emoji_cross Clem9669 rules not present${RESET}\n"
-    ask_for_downloading
-  fi
-
-  if [ ! -d "$Hob0Rules_path" ]; then
-    printf "${RED}$emoji_cross Hob0Rules rules not present${RESET}\n"
-    ask_for_downloading
-  fi
-
-  if [ ! -d "$OneRuleToRuleThemAll_rules_path" ]; then
-    printf "${RED}$emoji_cross OneRuleToRuleThemAll rules not present${RESET}\n"
-    ask_for_downloading
-  fi
-
-  if boolean_ask_for_downloading=false; then
-    #cat $cracking_sequence | while read line || [ -n "$line" ]; do
-    readarray -t lines < $cracking_sequence
-
-    for line in "${lines[@]}"; do
-
-      if [[ $line != *"brute-force"* && $line != *"potfile"* ]]; then
-
-        wordlist=$(echo "$line" | cut -d " " -f 1)
-        rule=$(echo "$line" | cut -d " " -f 2)
-
-        if [ ! -f "$clem9669_wordlists_path/$wordlist" ] || ([ ! -f "$clem9669_rules_path/$rule" ] && [ ! -f "/usr/share/hashcat/rules/$rule" ] && [ ! -f "$Hob0Rules_path/$rule" ] && [ ! -f "$OneRuleToRuleThemAll_rules_path/$rule" ]); then
-          printf "${RED}$emoji_cross $line not found${RESET}\n"
-          boolean_ask_for_downloading=true
-          break
+      # Handle post-download actions
+      local post_download="${RESOURCE_POST_DOWNLOAD[$name]}"
+      if [ "$post_download" != "{}" ]; then
+        # Extract 7z files if configured
+        if [ "$(echo "$post_download" | jq -r '.extract_7z // false')" = "true" ]; then
+          local max_depth=$(echo "$post_download" | jq -r '.max_depth // 1')
+          find "$path" -maxdepth "$max_depth" -type f -name "*.7z" -exec sudo 7z x {} -o"{%h}" \;
         fi
       fi
+    fi
+  done
+}
+
+# Prompt user for automatic download of missing resources
+# No arguments
+# Side effects:
+#   May call download_resources() and run_hashcat()
+ask_for_download() {
+  printf "${LIGHT_MAGENTA}Do you want to download the required wordlists and rules automatically?${RESET}\n"
+  echo ""
+
+  local options=("Download automatically (recommended)" "Exit")
+
+  select choice in "${options[@]}"; do
+    case $REPLY in
+      1)
+        download_resources
+        run_hashcat
+        break
+        ;;
+      2)
+        echo "Exiting..."
+        exit 0
+        ;;
+      *)
+        printf "${RED}Invalid option. Please select 1 or 2.${RESET}\n"
+        ;;
+    esac
+  done
+}
+
+##################################################
+############## RESOURCE CHECKING #################
+##################################################
+
+# Check if all required resources are present
+# No arguments
+# Side effects:
+#   May call ask_for_download() if resources are missing
+check_resources() {
+  debug_print "Checking for required resources"
+  local missing_resources=false
+
+  # Check for required directories from resources config
+  for name in "${!RESOURCE_PATHS[@]}"; do
+    local path="${RESOURCE_PATHS[$name]}"
+    if [ ! -d "$path" ]; then
+      printf "${RED}$EMOJI_CROSS $name not found${RESET}\n"
+      missing_resources=true
+    fi
+  done
+
+  # If any core resources are missing, prompt for download
+  if [ "$missing_resources" = true ]; then
+    ask_for_download
+    return
+  fi
+
+  # Check for specific files mentioned in cracking sequence
+  local need_download=false
+
+  if [ -f "$CRACKING_SEQUENCE_PATH" ]; then
+    readarray -t lines < "$CRACKING_SEQUENCE_PATH"
+
+    for line in "${lines[@]}"; do
+      # Skip brute-force and potfile lines
+      if [[ $line == *"brute-force"* ]] || [[ $line == *"potfile"* ]]; then
+        continue
+      fi
+
+      local wordlist=$(echo "$line" | cut -d " " -f 1)
+      local rule=$(echo "$line" | cut -d " " -f 2)
+
+      # Check if wordlist exists using find_wordlist_path
+      if ! find_wordlist_path "$wordlist" >/dev/null 2>&1; then
+        need_download=true
+        break
+      fi
+
+      # Check if rule exists in any location
+      if ! find_rule_path "$rule" >/dev/null 2>&1; then
+        printf "${RED}$EMOJI_CROSS Rule $rule not found${RESET}\n"
+        need_download=true
+        break
+      fi
     done
 
-    if $boolean_ask_for_downloading; then
-      ask_for_downloading
+    if [ "$need_download" = true ]; then
+      ask_for_download
     fi
   fi
 }
 
-check_for_wordlist
-run_hashcat
+##################################################
+############## MAIN HASHCAT FUNCTION #############
+##################################################
 
+# Main function to run hashcat with configured sequence
+# No arguments (uses global SCRIPT_ARGS)
+# Returns:
+#   0 on success
+#   Exit codes from hashcat on failure
+run_hashcat() {
+  debug_print "Starting hashcat sequence"
 
+  # Create the empty processed potfile tracker
+  : > "$AUTOCAT_PROCESSED_POTFILE_PATH"
 
+  # Read cracking sequence
+  readarray -t lines < "$CRACKING_SEQUENCE_PATH"
 
+  for line in "${lines[@]}"; do
+    # Skip empty lines
+    [ -z "$line" ] && continue
 
+    if [[ $line == *"brute-force"* ]]; then
+      # Handle brute-force attacks
+      local nb_digits=$(echo "$line" | grep -oE '(0|1?[0-9]|20)')
+      local mask="${HASHCAT_MASK:0:($nb_digits)*2}"
+
+      printf "${LIGHT_MAGENTA}Running brute-force attack (${nb_digits} characters)${RESET}\n"
+      printf "${YELLOW}hashcat $SCRIPT_ARGS -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3${RESET}\n"
+      hashcat "${filtered_args[@]}" -a 3 -1 ?l?d?u -2 ?l?d -3 tool/3_default.hcchr $mask -O -w 3
+
+    else
+      # Handle wordlist + rule attacks
+      local wordlist=$(echo "$line" | cut -d " " -f 1)
+      local rule=$(echo "$line" | cut -d " " -f 2)
+      local rule_path=$(find_rule_path "$rule")
+
+      # Find wordlist using find_wordlist_path
+      local wordlist_path=$(find_wordlist_path "$wordlist" 2>/dev/null)
+      if [ -z "$wordlist_path" ]; then
+        printf "${RED}Error: Wordlist $wordlist not found${RESET}\n"
+        continue
+      fi
+
+      printf "${LIGHT_MAGENTA}Running attack with wordlist: $wordlist, rule: $rule${RESET}\n"
+      printf "${YELLOW}hashcat $SCRIPT_ARGS $wordlist_path -r $rule_path -O -w 3${RESET}\n"
+      hashcat "${filtered_args[@]}" "$wordlist_path" -r "$rule_path" -O -w 3
+
+    fi
+
+    if ! "$disable_potfile"; then
+      # === Potfile cracking step if there are new passwords ===
+      # Extract all cracked passwords from the potfile
+      cat "$HASHCAT_POTFILE_PATH" | rev | cut -d':' -f1 | rev | sort -u > "$AUTOCAT_ALL_POTFILE_PATH"
+      # Compare with already processed passwords
+      comm -23 "$AUTOCAT_ALL_POTFILE_PATH" <(sort -u "$AUTOCAT_PROCESSED_POTFILE_PATH") > "$AUTOCAT_NEW_CRACKED_POTFILE_PATH"
+
+      if [ -s "$AUTOCAT_NEW_CRACKED_POTFILE_PATH" ]; then
+        # Find rule for potfile cracking
+        local potfile_rule_path=$(find_rule_path "$POTFILE_CRACKING_RULE" 2>/dev/null)
+        if [ -z "$potfile_rule_path" ]; then
+          printf "${RED}Error: Potfile rule $POTFILE_CRACKING_RULE not found${RESET}\n"
+          continue
+        fi
+
+        printf "${LIGHT_MAGENTA}Running potfile attack with rule: $POTFILE_CRACKING_RULE (only new cracked passwords)${RESET}\n"
+        printf "${YELLOW}hashcat $SCRIPT_ARGS $AUTOCAT_NEW_CRACKED_POTFILE_PATH -r $potfile_rule_path -O -w 3${RESET}\n"
+        hashcat "${filtered_args[@]}" $AUTOCAT_NEW_CRACKED_POTFILE_PATH -r "$potfile_rule_path" -O -w 3
+
+        # Update processed potfile list
+        sort -u "$AUTOCAT_NEW_CRACKED_POTFILE_PATH"> "$AUTOCAT_PROCESSED_POTFILE_PATH"
+      else
+        printf "${LIGHT_MAGENTA}No new passwords to process for potfile attack, skipping.${RESET}\n"
+      fi
+
+      # Clean temporary files
+      rm -f "$AUTOCAT_NEW_CRACKED_POTFILE_PATH" "$AUTOCAT_ALL_POTFILE_PATH"
+
+    else
+      debug_print "Potfile cracking disabled"
+    fi
+
+  done
+}
+
+##################################################
+############## MAIN EXECUTION ####################
+##################################################
+
+# Check for required dependencies
+if ! command -v jq &> /dev/null; then
+  printf "${RED}Error: jq is not installed. Please install it first.${RESET}\n"
+  exit 1
+fi
+
+if ! command -v hashcat &> /dev/null; then
+  printf "${RED}Error: hashcat is not installed. Please install it first.${RESET}\n"
+  exit 1
+fi
+
+# Check and validate configuration file
+if [ ! -f "$CONFIG_FILE" ]; then
+  printf "${RED}Error: Configuration file $CONFIG_FILE not found${RESET}\n"
+  exit 1
+fi
+
+if ! validate_json "$CONFIG_FILE"; then
+  exit 1
+fi
+
+# Check cracking sequence file exists
+if [ ! -f "$CRACKING_SEQUENCE_PATH" ]; then
+  printf "${RED}Error: Cracking sequence file $CRACKING_SEQUENCE_PATH not found${RESET}\n"
+  exit 1
+fi
+
+# Parse command line arguments
+# Initialize flags
+show_help=false
+disable_potfile=false
+filtered_args=()
+
+for arg in "${SCRIPT_ARGS[@]}"; do
+    case "$arg" in
+        -h|--help)
+            show_help=true
+            ;;
+        --disable_potfile)
+            disable_potfile=true
+            ;;
+        --debug)
+            DEBUG_MODE=true
+            debug_print "Debug mode enabled"
+            ;;
+        *)
+            filtered_args+=("$arg")  # garde les autres
+            ;;
+    esac
+done
+
+if $show_help; then
+    printf "${YELLOW}Autocat Help :${RESET}\n"
+    echo "Usage: $0 [same options as Hashcat]"
+    echo "  -h, --help           Show help"
+    echo "  --disable_potfile    Disable potfile cracking"
+    echo "  --debug              Enable debug output\n"
+    printf "${YELLOW}\nHashcat Help :${RESET}\n"
+    hashcat -h
+    exit 0
+fi
+
+if $disable_potfile; then
+    debug_print "Potfile disabled"
+fi
+
+# Main execution
+main() {
+  check_resources
+  run_hashcat
+}
+
+main

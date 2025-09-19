@@ -1,7 +1,53 @@
 {
-    "cracking_sequence_path": "./cracking_sequence.txt",
-    "clem9669_wordlists_path": "/usr/share/wordlists/wordlists",
-    "clem9669_rules_path": "/usr/share/wordlists/hashcat-rule",
-    "Hob0Rules_path": "/usr/share/wordlists/Hob0Rules",
-    "OneRuleToRuleThemAll_rules_path": "/usr/share/wordlists/password_cracking_rules"
+    "paths": {
+        "cracking_sequence": "./fr_cracking_sequence.txt",
+        "hashcat_potfile": "${HOME}/.local/share/hashcat/hashcat.potfile",
+        "autocat_processed_potfile": "/tmp/autocat_processed_potfile",
+        "autocat_new_cracked_potfile": "/tmp/autocat_new_cracked_potfile",
+        "autocat_all_potfile": "/tmp/autocat_all_potfile"
+    },
+    "potfile_cracking_rule": "OneRuleToRuleThemAll.rule",
+    "download_resources": [
+        {
+            "name": "clem9669_wordlists",
+            "type": "wordlists",
+            "url": "https://github.com/k4amos/wordlists",
+            "path": "/usr/share/wordlists/wordlists",
+            "description": "Clem9669 wordlists collection",
+            "post_download": {
+                "extract_7z": true,
+                "max_depth": 2
+            }
+        },
+        {
+            "name": "clem9669_rules",
+            "type": "rules",
+            "url": "https://github.com/k4amos/hashcat-rule.git",
+            "path": "/usr/share/wordlists/hashcat-rule",
+            "description": "Clem9669 hashcat rules"
+        },
+        {
+            "name": "Hob0Rules",
+            "type": "rules",
+            "url": "https://github.com/praetorian-inc/Hob0Rules.git",
+            "path": "/usr/share/wordlists/Hob0Rules",
+            "description": "Hob0Rules by Praetorian"
+        },
+        {
+            "name": "OneRuleToRuleThemAll",
+            "type": "rules",
+            "url": "https://github.com/NotSoSecure/password_cracking_rules.git",
+            "path": "/usr/share/wordlists/password_cracking_rules",
+            "description": "OneRuleToRuleThemAll rules collection"
+        }
+    ],
+    "additional_rules_path": [
+        "/usr/share/hashcat/rules"
+    ],
+    "additional_wordlists_path": [
+    ],
+    "default_settings": {
+        "auto_download": true,
+        "verify_checksums": false
+    }
 }
