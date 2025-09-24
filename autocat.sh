@@ -3,8 +3,6 @@
 # Autocat - Automated hashcat workflow manager
 # This script automates the process of running hashcat with wordlists and rules
 
-set -euo pipefail
-
 ##################################################
 ############## GLOBAL SETTINGS ###################
 ##################################################
