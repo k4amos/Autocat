@@ -65,7 +65,7 @@ Here is the list of rules and wordlists required by Autocat to crack French hash
 |  | Hob0Rules  |
 |  | OneRuleToRuleThemAll |
 
-The rules come from this [repository](https://github.com/clem9669/wordlists) which was forked to prevent a change to the wordlists' structure from breaking the tool.
+The wordlists come from this [repository](https://github.com/clem9669/wordlists) which was forked to prevent a change to the wordlists' structure from breaking the tool.
 
 ### Other🌎 hash cracking
 
