@@ -85,6 +85,10 @@ You can modify these paths to point to existing wordlist collections on your sys
 
 This file defines the attack sequence for french🇫🇷 password. Each line specifies an attack type.
 
+## Other Tools
+
+- [Autocat-training](https://github.com/k4amos/Autocat-training) : Autocat-training aims to solve the **knapsack problem** using a **greedy algorithm** to determine the **most optimal password cracking sequence** for cracking a given input list of hashes and a list of cracking methods (wordlists, rules, brute-force) that you can specify.
+- [cracking_curve](https://github.com/k4amos/cracking_curve) : This tool makes it easy to display the cracking curve obtained with Hashcat/Autocat.
 
 ## Disclaimer
 
