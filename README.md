@@ -6,12 +6,24 @@
 
 ## Overview
 
-Autocat is an intelligent wrapper for Hashcat that automates password cracking using optimized attack sequences for french🇫🇷 passwords. It automatically manages wordlists, rules, attack methods and potfile used as a wordlist.
+Autocat is a wrapper for Hashcat that makes it easy to crack a cracking sequence without having to run each cracking method (wordlist with rules, brute-force) manually. Optimizations such as using the potfile of newly cracked passwords as wordlists provide significant performance gains.
 
-The password cracking method sequence for french passwords was obtained using the following code : [autocat-training](https://github.com/k4amos/Autocat-training)
+Autocat comes pre-configured for French🇫🇷 passwords: the cracking sequence in `fr_cracking_sequence.txt` was produced by Autocat‑training: a large 2023 benchmark executed against an extensive dataset of French hashes aggregated from multiple sources, but you can set whatever sequence you want (for example for other languages) in the `cracking_sequence` field of the `config.json` file.
 
-⚠️ The README is currently under construction.
+> [!NOTE]
+> The technical explanations in the [Autocat-training](https://github.com/k4amos/Autocat-training) project's README provide a better understanding of the tool and the theory behind it.
 
+<p align="center">
+    <img src="tool/img/summary.png">
+</p>
+<br>
+
+General architecture of Autocat :
+
+<p align="center">
+    <img src="tool/img/archi.png">
+</p>
+<br>
 
 ## Installation
 
@@ -28,7 +40,7 @@ chmod +x autocat.sh
 
 ## Usage
 
-Autocat uses the same syntax as Hashcat. The attack mode (`-a` option) is handled automatically based on the cracking sequence.
+Autocat uses the same syntax as Hashcat. The attack mode (`-a` option) is handled automatically based on the cracking sequence. You don't need to specify the cracking method used (wordlist, rules, brute-force), as it is chosen automatically.
 
 ### Basic Usage
 
@@ -43,15 +55,29 @@ Crack NTLM hashes:
 ./autocat.sh -m 1000 hashes.txt
 ```
 
-### Supported Hash Types
+### French🇫🇷 hash cracking
 
-Autocat supports all hash types that Hashcat supports.
+Here is the list of rules and wordlists required by Autocat to crack French hashes, as defined in `config.json`, which are automatically downloaded if missing:
+
+| Wordlist  | Rules |
+| ------------- | ------------- |
+| clem9669_wordlists  | clem9669_rules  |
+|  | Hob0Rules  |
+|  | OneRuleToRuleThemAll |
+
+
+
+### Other🌎 hash cracking
+
+If you want to use other wordlists and rules, you can add them in the download_resources field of `config.json`.
+If these resources are already present on your computer and you don’t need to download them, the simplest way is to add their paths to the respective lists `additional_rules_path` and `additional_wordlists_path` in `config.json`.
+
 
 ## Configuration
 
 ### config.json
 
-The configuration file defines paths to resources
+The configuration file defines paths to resources.
 
 You can modify these paths to point to existing wordlist collections on your system.
 
@@ -59,6 +85,8 @@ You can modify these paths to point to existing wordlist collections on your sys
 
 This file defines the attack sequence for french🇫🇷 password. Each line specifies an attack type.
 
+
 ## Disclaimer
 
-This tool is provided for educational and authorized security testing purposes only. Users are responsible for complying with all applicable laws and regulations. The authors assume no liability for misuse or damage caused by this tool.
+> [!CAUTION]
+> This tool is provided for educational and authorized security testing purposes only. Users are responsible for complying with all applicable laws and regulations. The authors assume no liability for misuse or damage caused by this tool.
