@@ -206,7 +206,7 @@ download_resources() {
         # Extract 7z files if configured
         if [ "$(echo "$post_download" | jq -r '.extract_7z // false')" = "true" ]; then
           local max_depth=$(echo "$post_download" | jq -r '.max_depth // 1')
-          find "$path" -maxdepth "$max_depth" -type f -name "*.7z" -exec sudo 7z x {} -o"{%h}" \;
+          find "$path" -maxdepth "$max_depth" -type f -name "*.7z" -exec sh -c 'sudo 7z x "$1" -o"$(dirname "$1")"' _ {} \;
         fi
       fi
     fi
@@ -215,8 +215,6 @@ download_resources() {
 
 # Prompt user for automatic download of missing resources
 # No arguments
-# Side effects:
-#   May call download_resources() and run_hashcat()
 ask_for_download() {
   printf "${LIGHT_MAGENTA}Do you want to download the required wordlists and rules automatically?${RESET}\n"
   echo ""
@@ -247,8 +245,6 @@ ask_for_download() {
 
 # Check if all required resources are present
 # No arguments
-# Side effects:
-#   May call ask_for_download() if resources are missing
 check_resources() {
   debug_print "Checking for required resources"
   local missing_resources=false
